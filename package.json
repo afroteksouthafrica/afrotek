@@ -1,0 +1,17 @@
+{
+  "name": "afrotek",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "mailgun-test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "form-data": "^4.0.4",
+    "mailgun.js": "^12.1.1"
+  }
+}
