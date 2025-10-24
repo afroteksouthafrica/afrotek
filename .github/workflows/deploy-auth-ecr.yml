@@ -1,0 +1,43 @@
+name: Build & Push Auth Image
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "services/auth/**"
+      - ".github/workflows/deploy-auth-ecr.yml"
+  workflow_dispatch:
+
+env:
+  AWS_REGION: af-south-1
+  ECR_REPO: 166023635884.dkr.ecr.af-south-1.amazonaws.com/afrotek/auth
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::166023635884:role/GitHubActionsAfrotekECRPush
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        run: |
+          docker build -t auth:ci ./services/auth
+          docker tag auth:ci ${{ env.ECR_REPO }}:latest
+          docker tag auth:ci ${{ env.ECR_REPO }}:${{ github.sha }}
+
+      - name: Push image
+        run: |
+          docker push ${{ env.ECR_REPO }}:latest
+          docker push ${{ env.ECR_REPO }}:${{ github.sha }}
