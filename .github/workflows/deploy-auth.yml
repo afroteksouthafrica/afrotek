@@ -1,0 +1,50 @@
+name: Deploy Auth Service (staging)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "services/auth/**"
+      - ".github/workflows/deploy-auth.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: af-south-1
+      AWS_ACCOUNT_ID: "166023635884"
+      ECR_REPO: "166023635884.dkr.ecr.af-south-1.amazonaws.com/afrotek/auth"
+      ECS_CLUSTER: "afrotek-staging-cluster"
+      ECS_SERVICE: "afrotek-staging-auth-service"
+      IMAGE_TAG: "build-${{ github.sha }}"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS creds via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::166023635884:role/GitHubActionsDeploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push image
+        working-directory: services/auth
+        run: |
+          docker build -t $ECR_REPO:latest -t $ECR_REPO:$IMAGE_TAG .
+          docker push $ECR_REPO:$IMAGE_TAG
+          docker push $ECR_REPO:latest
+
+      - name: Force new ECS deployment (pull latest)
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --force-new-deployment
