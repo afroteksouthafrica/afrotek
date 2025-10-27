@@ -21,11 +21,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS (access keys)
+      - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::166023635884:role/GitHubActionsDeployRole
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -56,11 +55,8 @@ jobs:
         env:
           IMAGE_URI: ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.digest.outputs.digest }}
         run: |
-          # fetch current task def
           TD_ARN=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].taskDefinition' --output text)
           aws ecs describe-task-definition --task-definition $TD_ARN > td.json
-
-          # produce new container defs with new image + env var APP_REV
           node -e "const fs=require('fs');const td=JSON.parse(fs.readFileSync('td.json','utf8')).taskDefinition;
           const cd=td.containerDefinitions.map(c=>{
             if(c.name==='product'){c.image=process.env.IMAGE_URI;
@@ -72,11 +68,7 @@ jobs:
           const out={ family: td.family, taskRoleArn: td.taskRoleArn, executionRoleArn: td.executionRoleArn, networkMode: td.networkMode, containerDefinitions: cd, requiresCompatibilities: td.requiresCompatibilities, cpu: td.cpu, memory: td.memory, runtimePlatform: td.runtimePlatform };
           fs.writeFileSync('td-new.json', JSON.stringify(out));
           "
-
-          # register new task def
           NEW_TD_ARN=$(aws ecs register-task-definition --cli-input-json file://td-new.json --query 'taskDefinition.taskDefinitionArn' --output text)
-
-          # update service to new task def
           aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition $NEW_TD_ARN
 
       - name: Deploy summary
