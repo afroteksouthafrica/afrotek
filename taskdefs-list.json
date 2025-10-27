@@ -1,6 +1,0 @@
-{
-    "taskDefinitionArns": [
-        "arn:aws:ecs:af-south-1:166023635884:task-definition/afrotek-staging-product-service:3",
-        "arn:aws:ecs:af-south-1:166023635884:task-definition/afrotek-staging-product-service:2"
-    ]
-}
