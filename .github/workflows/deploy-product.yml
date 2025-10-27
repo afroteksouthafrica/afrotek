@@ -1,50 +1,95 @@
 name: Deploy Product Service (staging)
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
     paths:
-      - "services/product-health-proxy/**"
-      - ".github/workflows/deploy-product.yml"
+      - 'services/product-service/**'
+      - '.github/workflows/deploy-product.yml'
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: af-south-1
-      AWS_ACCOUNT_ID: "166023635884"
-      ECR_REPO: "166023635884.dkr.ecr.af-south-1.amazonaws.com/afrotek/product-service"
-      ECS_CLUSTER: "afrotek-staging-cluster"
-      ECS_SERVICE: "afrotek-staging-product-service"
-      IMAGE_TAG: "build-${{ github.sha }}"
-
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+      ECS_SERVICE: ${{ secrets.ECS_SERVICE_PRODUCT }}
+      IMAGE_NAME: afrotek/product-service
+      CONTAINER_NAME: product
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS creds via OIDC
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+
+      - name: Configure AWS credentials (access keys for now)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::166023635884:role/GitHubActionsDeploy
-          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to ECR
+      - name: Login to Amazon ECR
+        id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & push image
-        working-directory: services/product-health-proxy
+      - name: Build image
         run: |
-          docker build -t $ECR_REPO:latest -t $ECR_REPO:$IMAGE_TAG .
-          docker push $ECR_REPO:$IMAGE_TAG
-          docker push $ECR_REPO:latest
+          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:${{ github.sha }} services/product-service
 
-      - name: Force new ECS deployment (pull latest)
+      - name: Tag with registry
         run: |
-          aws ecs update-service \
-            --cluster "$ECS_CLUSTER" \
-            --service "$ECS_SERVICE" \
-            --force-new-deployment
+          docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:latest
+          docker tag $IMAGE_NAME:${{ github.sha }} $ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }}
+
+      - name: Push images
+        run: |
+          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }}
+
+      - name: Get image digest
+        id: ecr-digest
+        run: |
+          DIGEST=$(aws ecr describe-images --repository-name $IMAGE_NAME --image-ids imageTag=${{ github.sha }} --query 'imageDetails[0].imageDigest' --output text)
+          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+
+      - name: Register new ECS task definition (pin by digest)
+        id: taskdef
+        run: |
+          APP_REV=$(date +%Y%m%d%H%M%S)-${{ github.sha }}
+          echo "APP_REV=$APP_REV" >> $GITHUB_ENV
+
+          # fetch current task definition
+          FAMILY=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].taskDefinition' --output text | awk -F'/' '{print $2}' | awk -F':' '{print $1}')
+          BASE_TD=$(aws ecs describe-task-definition --task-definition $FAMILY --query 'taskDefinition' )
+
+          # update container image + env var APP_REV (jq required)
+          echo "$BASE_TD" \
+          | jq '.containerDefinitions |= (map(if .name == env.CONTAINER_NAME then (.image = env.ECR_REGISTRY+"/"+env.IMAGE_NAME+"@"+env.digest) | (.environment |= (map(select(.name != "APP_REV")) + [{"name":"APP_REV","value": env.APP_REV }])) else . end))' \
+          | jq '{family, taskRoleArn, executionRoleArn, networkMode, containerDefinitions, volumes, placementConstraints, requiresCompatibilities, cpu, memory, runtimePlatform}' > new-taskdef.json
+
+          aws ecs register-task-definition --cli-input-json file://new-taskdef.json > new-taskdef-out.json
+          NEW_TD_ARN=$(jq -r '.taskDefinition.taskDefinitionArn' new-taskdef-out.json)
+          echo "taskdef_arn=$NEW_TD_ARN" >> $GITHUB_OUTPUT
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition ${{ steps.taskdef.outputs.taskdef_arn }}
+
+      - name: Wait for service stability
+        run: |
+          aws ecs wait services-stable --cluster $ECS_CLUSTER --services $ECS_SERVICE
+
+      - name: Deploy summary
+        run: |
+          echo "Deployed $ECR_REGISTRY/$IMAGE_NAME@${{ steps.ecr-digest.outputs.digest }} to $ECS_SERVICE"
+          echo "APP_REV=$APP_REV"
