@@ -1,0 +1,23 @@
+name: Runner Smoke Test
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  smoke:
+    runs-on: [self-hosted, linux, afrotek]  # must match your runner's labels
+    steps:
+      - name: Show runner info
+        run: |
+          echo "Host:" $(hostname)
+          echo "User:" $(whoami)
+          echo "Labels: self-hosted, linux, afrotek"
+          uname -a
+          cat /etc/os-release || true
+
+      - name: Check common tools
+        run: |
+          node -v || echo "node not installed (ok for smoke)"
+          git --version
+          docker --version || echo "docker not installed yet (ok if you won't build images here)"
