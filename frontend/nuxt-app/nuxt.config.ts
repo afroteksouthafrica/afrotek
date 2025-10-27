@@ -1,7 +1,25 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
-  devtools: { enabled: true }
-})
+  // ✅ Latest Nitro compatibility date
+  compatibilityDate: '2025-10-24',
 
-export default defineNuxtConfig({ modules: ['@pinia/nuxt', '@nuxtjs/i18n'], css: ['~/assets/main.css'] })
+  // ✅ Enable DevTools
+  devtools: { enabled: true },
+
+  // ✅ Nuxt modules
+  modules: [
+    '@pinia/nuxt',
+    '@nuxtjs/i18n'
+  ],
+
+  // Global CSS is imported from `app/app.vue` to avoid alias resolution issues
+  css: [],
+
+  // ✅ Basic i18n setup to remove warnings
+  i18n: {
+    defaultLocale: 'en',
+    locales: [
+      { code: 'en', name: 'English' }
+    ]
+  }
+})

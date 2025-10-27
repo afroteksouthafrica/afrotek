@@ -17,3 +17,19 @@ node_modules
 dist
 build
 .DS_Store
+# Terraform
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Credentials / secrets
+afrotek-partner-access-keys.json
+*.env
+*.env.*
+
+# OS/IDE
+.DS_Store
+.vscode/
+node_modules/

@@ -1,0 +1,7 @@
+{
+  // Recommended: update this path if your Python interpreter lives elsewhere.
+  // For Windows PowerShell venv created at services/auth/.venv
+  "python.defaultInterpreterPath": "${workspaceFolder}/services/auth/.venv/Scripts/python.exe",
+  // Optional: disable CSS validation for Tailwind directive files if your editor flags unknown at-rules
+  "css.validate": true
+}

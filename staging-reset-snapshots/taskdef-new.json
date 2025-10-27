@@ -1,0 +1,38 @@
+{
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX",
+    "cpuArchitecture": "X86_64"
+  },
+  "executionRoleArn": "arn:aws:iam::166023635884:role/afrotek-staging-ecs-exec",
+  "taskRoleArn": "arn:aws:iam::166023635884:role/afrotek-staging-ecs-task",
+  "family": "afrotek-staging-product-service",
+  "containerDefinitions": [
+    {
+      "environment": [],
+      "name": "product-service",
+      "image": "166023635884.dkr.ecr.af-south-1.amazonaws.com/afrotek-product-service:clean-20251024-204021",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/afrotek-product-service",
+          "awslogs-stream-prefix": "product",
+          "awslogs-region": "af-south-1"
+        }
+      },
+      "portMappings": [
+        {
+          "protocol": "tcp",
+          "containerPort": 3002,
+          "hostPort": 3002
+        }
+      ],
+      "essential": true
+    }
+  ],
+  "cpu": "512",
+  "networkMode": "awsvpc",
+  "memory": "1024"
+}

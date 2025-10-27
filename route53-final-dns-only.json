@@ -1,0 +1,251 @@
+{
+  "Comment": "Final cutover: afrotek.co.za -> AWS (ALB + WorkMail)",
+  "Changes": [
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "afrotek.co.za.",
+        "Type": "MX",
+        "TTL": 86400,
+        "ResourceRecords": [
+          { "Value": "10 mx1.tld-mx.com." },
+          { "Value": "20 mx2.tld-mx.net." }
+        ]
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "afrotek.co.za.",
+        "Type": "TXT",
+        "TTL": 14400,
+        "ResourceRecords": [
+          { "Value": "\"v=spf1 +a +mx +ip4:156.155.252.36 include:relay.mailchannels.net ~all\"" }
+        ]
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "autodiscover.afrotek.co.za.",
+        "Type": "A",
+        "TTL": 14400,
+        "ResourceRecords": [
+          { "Value": "156.155.252.36" }
+        ]
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "mail.afrotek.co.za.",
+        "Type": "A",
+        "TTL": 14400,
+        "ResourceRecords": [
+          { "Value": "156.155.252.36" }
+        ]
+      }
+    },
+
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "afrotek.co.za.",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "Z268VQBMOI5EKX",
+          "DNSName": "afrotek-staging-alb-780732111.af-south-1.elb.amazonaws.com",
+          "EvaluateTargetHealth": true
+        }
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "auth.afrotek.co.za.",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "Z268VQBMOI5EKX",
+          "DNSName": "afrotek-staging-alb-780732111.af-south-1.elb.amazonaws.com",
+          "EvaluateTargetHealth": true
+        }
+      }
+    },
+
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "afrotek.co.za.",
+        "Type": "MX",
+        "TTL": 300,
+        "ResourceRecords": [
+          { "Value": "10 inbound-smtp.eu-west-1.amazonaws.com." }
+        ]
+      }
+    },
+    {
+      {
+        "Comment": "Final cutover: afrotek.co.za -> AWS (ALB + WorkMail)",
+        "Changes": [
+          {
+            "Action": "DELETE",
+            "ResourceRecordSet": {
+              "Name": "afrotek.co.za.",
+              "Type": "MX",
+              "TTL": 86400,
+              "ResourceRecords": [
+                { "Value": "10 mx1.tld-mx.com." },
+                { "Value": "20 mx2.tld-mx.net." }
+              ]
+            }
+          },
+          {
+            "Action": "DELETE",
+            "ResourceRecordSet": {
+              "Name": "afrotek.co.za.",
+              "Type": "TXT",
+              "TTL": 14400,
+              "ResourceRecords": [
+                { "Value": "\"v=spf1 +a +mx +ip4:156.155.252.36 include:relay.mailchannels.net ~all\"" }
+              ]
+            }
+          },
+          {
+            "Action": "DELETE",
+            "ResourceRecordSet": {
+              "Name": "autodiscover.afrotek.co.za.",
+              "Type": "A",
+              "TTL": 14400,
+              "ResourceRecords": [
+                { "Value": "156.155.252.36" }
+              ]
+            }
+          },
+          {
+            "Action": "DELETE",
+            "ResourceRecordSet": {
+              "Name": "mail.afrotek.co.za.",
+              "Type": "A",
+              "TTL": 14400,
+              "ResourceRecords": [
+                { "Value": "156.155.252.36" }
+              ]
+            }
+          },
+
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "afrotek.co.za.",
+              "Type": "A",
+              "AliasTarget": {
+                "HostedZoneId": "Z268VQBMOI5EKX",
+                "DNSName": "afrotek-staging-alb-780732111.af-south-1.elb.amazonaws.com",
+                "EvaluateTargetHealth": true
+              }
+            }
+          },
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "auth.afrotek.co.za.",
+              "Type": "A",
+              "AliasTarget": {
+                "HostedZoneId": "Z268VQBMOI5EKX",
+                "DNSName": "afrotek-staging-alb-780732111.af-south-1.elb.amazonaws.com",
+                "EvaluateTargetHealth": true
+              }
+            }
+          },
+
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "afrotek.co.za.",
+              "Type": "MX",
+              "TTL": 300,
+              "ResourceRecords": [
+                { "Value": "10 inbound-smtp.eu-west-1.amazonaws.com." }
+              ]
+            }
+          },
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "_amazonses.afrotek.co.za.",
+              "Type": "TXT",
+              "TTL": 300,
+              "ResourceRecords": [
+                { "Value": "\"L+KG0bjTLv5zw1ViLAb1qGF8T0T0WeKFFQZBrtw/iiQ=\"" }
+              ]
+            }
+          },
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "afrotek.co.za.",
+              "Type": "TXT",
+              "TTL": 300,
+              "ResourceRecords": [
+                { "Value": "\"v=spf1 include:amazonses.com ~all\"" }
+              ]
+            }
+          },
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "_dmarc.afrotek.co.za.",
+              "Type": "TXT",
+              "TTL": 3600,
+              "ResourceRecords": [
+                { "Value": "\"v=DMARC1;p=quarantine;pct=100;fo=1\"" }
+              ]
+            }
+          },
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "autodiscover.afrotek.co.za.",
+              "Type": "CNAME",
+              "TTL": 300,
+              "ResourceRecords": [
+                { "Value": "autodiscover.mail.eu-west-1.awsapps.com." }
+              ]
+            }
+          },
+
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "77v3x3gdczehnedfrfs3bf4kfwltnytq._domainkey.afrotek.co.za.",
+              "Type": "CNAME",
+              "TTL": 300,
+              "ResourceRecords": [
+                { "Value": "77v3x3gdczehnedfrfs3bf4kfwltnytq.dkim.amazonses.com." }
+              ]
+            }
+          },
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "v2pwwj7a3ip65lxvmqna3acdpxspriju._domainkey.afrotek.co.za.",
+              "Type": "CNAME",
+              "TTL": 300,
+              "ResourceRecords": [
+                { "Value": "v2pwwj7a3ip65lxvmqna3acdpxspriju.dkim.amazonses.com." }
+              ]
+            }
+          },
+          {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+              "Name": "77jl2o2vn2m36g7conwq3nor7r3fwqgj._domainkey.afrotek.co.za.",
+              "Type": "CNAME",
+              "TTL": 300,
+              "ResourceRecords": [
+                { "Value": "77jl2o2vn2m36g7conwq3nor7r3fwqgj.dkim.amazonses.com." }
+              ]
+            }
+          }
+        ]
+      }

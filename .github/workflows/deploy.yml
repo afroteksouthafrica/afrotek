@@ -1,0 +1,59 @@
+name: Deploy (staging)
+
+on:
+  push:
+    branches: [ "main" ]  # adjust as needed
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: "166023635884"
+  ECR_REPO_PRODUCT: "afrotek/product-service"
+  ECR_REPO_AUTH: "afrotek/auth"
+  CLUSTER: "afrotek-staging-cluster"
+  SERVICE_PRODUCT: "afrotek-staging-product-service"
+  SERVICE_AUTH: "afrotek-staging-auth-service"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build & push product-service (adjust Dockerfile/context/tagging as needed)
+      - name: Build product-service image
+        run: |
+          docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_PRODUCT:${{ github.sha }} ./product-service
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_PRODUCT:${{ github.sha }}
+
+      # Register new task definition revision (example expects a template file)
+      - name: Render product taskdef
+        run: |
+          sed "s|IMAGE_URI|$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_PRODUCT:${{ github.sha }}|g" infra/ecs/afrotek-product-task.json > taskdef-product.json
+
+      - name: Register product taskdef
+        run: |
+          aws ecs register-task-definition --cli-input-json file://taskdef-product.json
+
+      - name: Update product-service
+        run: |
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE_PRODUCT" --force-new-deployment
+
+      # Repeat blocks for auth only if you want to deploy it in the same run
+      # - Build & push auth image
+      # - Render/ register auth taskdef
+      # - Update auth-service
